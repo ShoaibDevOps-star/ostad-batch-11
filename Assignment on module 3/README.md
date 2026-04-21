@@ -338,16 +338,6 @@ Client Browser
 
 ---
 
-## ✅ Marks Checklist
-
-| Part | Task | Marks |
-|------|------|-------|
-| Part 1 | Nginx & OpenSSL installed, `/var/www/secure-app` created, HTML page added | 20 |
-| Part 2 | Self-signed SSL (365 days) stored in `/etc/nginx/ssl/` | 20 |
-| Part 3 | Custom config: port 80 redirect, port 443 SSL, correct root & index | 30 |
-| Part 4 | Backend on port 3000, reverse proxy with Host & X-Real-IP headers | 20 |
-| Part 5 | `nginx -t` passes, reload works, HTTP redirect & HTTPS & backend tested | 10 |
-| **Total** | | **100** |
 
 ---
 

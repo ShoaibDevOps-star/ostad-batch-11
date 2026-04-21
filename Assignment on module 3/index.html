@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Secure Server</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Courier New', monospace;
+      background: #0a0e1a;
+      color: #e0e6f0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .container {
+      text-align: center;
+      padding: 60px 40px;
+      border: 1px solid #1e3a5f;
+      background: rgba(15, 25, 50, 0.9);
+      border-radius: 4px;
+      max-width: 600px;
+    }
+    .lock { font-size: 3rem; margin-bottom: 20px; }
+    h1 { font-size: 1.8rem; color: #4fc3f7; margin-bottom: 12px; }
+    p { color: #8899aa; font-size: 0.9rem; line-height: 1.6; }
+    .badge {
+      display: inline-block;
+      margin-top: 20px;
+      padding: 4px 14px;
+      background: rgba(79, 195, 247, 0.1);
+      border: 1px solid #4fc3f7;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      color: #4fc3f7;
+      letter-spacing: 1px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="lock">🔒</div>
+    <h1>Secure Server Running via Nginx</h1>
+    <p>HTTPS enabled · Self-signed SSL · Reverse Proxy active</p>
+    <span class="badge">MODULE 3 ASSIGNMENT</span>
+  </div>
+</body>
+</html>
