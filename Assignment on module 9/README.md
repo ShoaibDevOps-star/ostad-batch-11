@@ -1,14 +1,14 @@
 # Docker Installation and Networking on AWS EC2
 
 **Module 9 Assignment**
-Author: *(Shoaib Hasan)*
-Course: *(Ostad Batch 11)*
+Author: *(your name)*
+Course: *(course name)*
 
 ---
 
 ---
 
-> 📁 **Note on screenshots:** All screenshots referenced below are embedded directly via Markdown image syntax (e.g. `![...](screenshots/01-ec2-running.png)`) and will render automatically on GitHub once matching image files are placed in the `screenshots/` folder with the exact filenames shown. Simply save each screenshot using the filename indicated under its caption.
+> 📁 **Note on Screenshots:** All Screenshots referenced below are embedded directly via Markdown image syntax (e.g. `![...](Screenshots/01-ec2-running.png)`) and will render automatically on GitHub once matching image files are placed in the `Screenshots/` folder with the exact filenames shown. Simply save each screenshot using the filename indicated under its caption.
 
 ## Table of Contents
 
@@ -35,7 +35,7 @@ Course: *(Ostad Batch 11)*
 - Configure Docker so it can be run by a non-root user without `sudo`.
 - Pull and run the `hello-world` image to verify the installation.
 - Demonstrate and explain Docker's four core network types: **bridge**, **host**, **none**, and **custom bridge**.
-- Capture command output and screenshots as evidence for each step.
+- Capture command output and Screenshots as evidence for each step.
 
 ---
 
@@ -65,10 +65,10 @@ ssh -i "your-key.pem" ubuntu@<EC2_PUBLIC_IP>
 ```
 
 **Screenshot 1:** EC2 instance running in AWS Console (Instance state: *running*, with public IP visible).
-![EC2 instance running](screenshots/01-ec2-running.png)
+![EC2 instance running](Screenshots/01-ec2-running.png)
 
 **Screenshot 2:** Successful SSH login showing the Ubuntu welcome banner.
-![SSH login](screenshots/02-ssh-login.png)
+![SSH login](Screenshots/02-ssh-login.png)
 
 ---
 
@@ -121,10 +121,10 @@ sudo systemctl enable docker
 ```
 
 **Screenshot 3:** Output of `docker --version`.
-![Docker version](screenshots/03-docker-version.png)
+![Docker version](Screenshots/03-docker-version.png)
 
 **Screenshot 4:** Output of `sudo systemctl status docker` showing `active (running)`.
-![Docker service status](screenshots/04-docker-status.png)
+![Docker service status](Screenshots/04-docker-status.png)
 
 ---
 
@@ -151,10 +151,10 @@ docker run hello-world
 If this works without a permission error, the configuration is successful.
 
 **Screenshot 5:** Output of `groups $USER` showing `docker` listed.
-![Docker group membership](screenshots/05-docker-group.png)
+![Docker group membership](Screenshots/05-docker-group.png)
 
 **Screenshot 6:** `docker ps` run without `sudo`, returning no permission error.
-![docker ps without sudo](screenshots/06-docker-ps-no-sudo.png)
+![docker ps without sudo](Screenshots/06-docker-ps-no-sudo.png)
 
 > **Note:** Adding a user to the `docker` group is equivalent to giving them root-level privileges on the host, since Docker can mount the host filesystem. This is acceptable for a lab environment but should be done cautiously in production.
 
@@ -190,10 +190,10 @@ docker ps -a
 ```
 
 **Screenshot 7:** Full terminal output of `docker run hello-world`.
-![docker run hello-world output](screenshots/07-hello-world-run.png)
+![docker run hello-world output](Screenshots/07-hello-world-run.png)
 
 **Screenshot 8:** Output of `docker ps -a` showing the exited `hello-world` container.
-![docker ps -a showing hello-world](screenshots/08-hello-world-ps-a.png)
+![docker ps -a showing hello-world](Screenshots/08-hello-world-ps-a.png)
 
 ---
 
@@ -215,7 +215,7 @@ xxxxxxxxxxxx   none      null      local
 ```
 
 **Screenshot 9:** Output of `docker network ls`.
-![docker network ls](screenshots/09-network-ls.png)
+![docker network ls](Screenshots/09-network-ls.png)
 
 ---
 
@@ -245,10 +245,10 @@ docker exec -it bridge-test1 ping -c 3 <bridge-test2-IP>
 Expected observation: ping succeeds via IP address, confirming both containers share the same bridge subnet (typically `172.17.0.0/16`).
 
 **Screenshot 10:** `docker network inspect bridge` showing connected containers and subnet.
-![Bridge network inspect](screenshots/10-bridge-inspect.png)
+![Bridge network inspect](Screenshots/10-bridge-inspect.png)
 
 **Screenshot 11:** Successful `ping` between the two containers by IP.
-![Bridge ping by IP](screenshots/11-bridge-ping.png)
+![Bridge ping by IP](Screenshots/11-bridge-ping.png)
 
 ---
 
@@ -276,10 +276,10 @@ curl http://localhost:80
 Expected observation: `curl localhost:80` returns the Nginx welcome page HTML directly, with no `-p` port mapping required, since the container is using the host's networking stack.
 
 **Screenshot 12:** `docker inspect` showing an empty IP address for the host-network container.
-![Host network inspect](screenshots/12-host-inspect.png)
+![Host network inspect](Screenshots/12-host-inspect.png)
 
 **Screenshot 13:** `curl http://localhost:80` returning the Nginx default page.
-![Host network curl test](screenshots/13-host-curl.png)
+![Host network curl test](Screenshots/13-host-curl.png)
 
 ---
 
@@ -307,10 +307,10 @@ docker exec -it none-test ping -c 3 8.8.8.8
 Expected output: `ping` fails / network unreachable, confirming the container has no network connectivity.
 
 **Screenshot 14:** `ip a` output inside the container showing only `lo`.
-![None network interfaces](screenshots/14-none-ip-a.png)
+![None network interfaces](Screenshots/14-none-ip-a.png)
 
 **Screenshot 15:** Failed `ping` confirming network isolation.
-![None network ping failure](screenshots/15-none-ping-fail.png)
+![None network ping failure](Screenshots/15-none-ping-fail.png)
 
 ---
 
@@ -340,13 +340,13 @@ docker exec -it app1 ping -c 3 app2
 Expected observation: `ping app2` succeeds **by container name**, unlike on the default bridge network where name resolution is unavailable. This demonstrates the built-in DNS feature of user-defined bridge networks.
 
 **Screenshot 16:** `docker network create` and `docker network ls` showing the new custom network.
-![Custom bridge network created](screenshots/16-custom-bridge-create.png)
+![Custom bridge network created](Screenshots/16-custom-bridge-create.png)
 
 **Screenshot 17:** `docker network inspect my_custom_net` showing both containers attached.
-![Custom bridge network inspect](screenshots/17-custom-bridge-inspect.png)
+![Custom bridge network inspect](Screenshots/17-custom-bridge-inspect.png)
 
 **Screenshot 18:** Successful `ping app2` by name from inside `app1`.
-![Custom bridge ping by name](screenshots/18-custom-bridge-ping.png)
+![Custom bridge ping by name](Screenshots/18-custom-bridge-ping.png)
 
 ---
 
@@ -387,7 +387,7 @@ This lab demonstrated installing Docker Engine on an AWS EC2 Ubuntu instance, co
 ```
 .
 ├── README.md                # This file — full documentation
-├── screenshots/              # All screenshots referenced above
+├── Screenshots/              # All Screenshots referenced above
 │   ├── 01-ec2-running.png
 │   ├── 02-ssh-login.png
 │   ├── 03-docker-version.png
