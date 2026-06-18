@@ -1,8 +1,8 @@
 # Docker Installation and Networking on AWS EC2
 
 **Module 9 Assignment**
-Author: *(your name)*
-Course: *(course name)*
+Author: *(Shoaib Hasan)*
+Course: *(Ostad Batch 11)*
 
 ---
 
