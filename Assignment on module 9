@@ -1,0 +1,398 @@
+# Docker Installation and Networking on AWS EC2
+
+**Module 9 Assignment**
+Author: *(your name)*
+Course: *(course name)*
+
+---
+
+---
+
+> 📁 **Note on screenshots:** All screenshots referenced below are embedded directly via Markdown image syntax (e.g. `![...](screenshots/01-ec2-running.png)`) and will render automatically on GitHub once matching image files are placed in the `screenshots/` folder with the exact filenames shown. Simply save each screenshot using the filename indicated under its caption.
+
+## Table of Contents
+
+1. [Objectives](#objectives)
+2. [Prerequisites](#prerequisites)
+3. [Part 1: Launch and Connect to EC2 Instance](#part-1-launch-and-connect-to-ec2-instance)
+4. [Part 2: Install Docker on EC2](#part-2-install-docker-on-ec2)
+5. [Part 3: Configure Docker Permissions for Non-Root User](#part-3-configure-docker-permissions-for-non-root-user)
+6. [Part 4: Run hello-world](#part-4-run-hello-world)
+7. [Part 5: Docker Networking](#part-5-docker-networking)
+   - [5.1 Bridge Network (default)](#51-bridge-network-default)
+   - [5.2 Host Network](#52-host-network)
+   - [5.3 None Network](#53-none-network)
+   - [5.4 Custom Bridge Network](#54-custom-bridge-network)
+8. [Observations and Comparison](#observations-and-comparison)
+9. [Conclusion](#conclusion)
+10. [References](#references)
+
+---
+
+## Objectives
+
+- Install Docker Engine on an AWS EC2 (Ubuntu) instance.
+- Configure Docker so it can be run by a non-root user without `sudo`.
+- Pull and run the `hello-world` image to verify the installation.
+- Demonstrate and explain Docker's four core network types: **bridge**, **host**, **none**, and **custom bridge**.
+- Capture command output and screenshots as evidence for each step.
+
+---
+
+## Prerequisites
+
+- An AWS account with permission to launch EC2 instances.
+- A key pair (`.pem` file) for SSH access.
+- A security group allowing inbound SSH (port 22) from your IP.
+- Basic familiarity with the Linux terminal.
+
+---
+
+## Part 1: Launch and Connect to EC2 Instance
+
+1. In the AWS Console, go to **EC2 → Launch Instance**.
+2. Choose **Ubuntu Server 22.04 LTS** (or 24.04 LTS) as the AMI.
+3. Select instance type `t2.micro` (free-tier eligible).
+4. Create or select a key pair and download the `.pem` file.
+5. Configure the security group to allow **SSH (22)** from your IP, and optionally **HTTP (80)** if you plan to test web containers later.
+6. Launch the instance and wait until its status check passes.
+
+Connect via SSH from your local terminal:
+
+```bash
+chmod 400 your-key.pem
+ssh -i "your-key.pem" ubuntu@<EC2_PUBLIC_IP>
+```
+
+**Screenshot 1:** EC2 instance running in AWS Console (Instance state: *running*, with public IP visible).
+![EC2 instance running](screenshots/01-ec2-running.png)
+
+**Screenshot 2:** Successful SSH login showing the Ubuntu welcome banner.
+![SSH login](screenshots/02-ssh-login.png)
+
+---
+
+## Part 2: Install Docker on EC2
+
+Update the package index and install Docker using the official convenience script (recommended by Docker for quick setups):
+
+```bash
+# Update existing packages
+sudo apt-get update -y
+sudo apt-get upgrade -y
+
+# Install prerequisite packages
+sudo apt-get install -y ca-certificates curl gnupg lsb-release
+
+# Add Docker's official GPG key
+sudo install -m 0755 -d /etc/apt/keyrings
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+sudo chmod a+r /etc/apt/keyrings/docker.gpg
+
+# Add the Docker repository
+echo \
+  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
+  $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+
+# Install Docker Engine
+sudo apt-get update -y
+sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+```
+
+Verify installation:
+
+```bash
+docker --version
+sudo systemctl status docker
+```
+
+Expected output (example):
+
+```
+Docker version 26.x.x, build xxxxxxx
+● docker.service - Docker Application Container Engine
+   Active: active (running)
+```
+
+Enable Docker to start on boot:
+
+```bash
+sudo systemctl enable docker
+```
+
+**Screenshot 3:** Output of `docker --version`.
+![Docker version](screenshots/03-docker-version.png)
+
+**Screenshot 4:** Output of `sudo systemctl status docker` showing `active (running)`.
+![Docker service status](screenshots/04-docker-status.png)
+
+---
+
+## Part 3: Configure Docker Permissions for Non-Root User
+
+By default, the Docker daemon socket is owned by `root`, so non-root users must use `sudo` for every command. To avoid this, add your user to the `docker` group:
+
+```bash
+sudo usermod -aG docker $USER
+```
+
+Apply the new group membership (either log out/in again, or run):
+
+```bash
+newgrp docker
+```
+
+Verify that Docker runs without `sudo`:
+
+```bash
+docker run hello-world
+```
+
+If this works without a permission error, the configuration is successful.
+
+**Screenshot 5:** Output of `groups $USER` showing `docker` listed.
+![Docker group membership](screenshots/05-docker-group.png)
+
+**Screenshot 6:** `docker ps` run without `sudo`, returning no permission error.
+![docker ps without sudo](screenshots/06-docker-ps-no-sudo.png)
+
+> **Note:** Adding a user to the `docker` group is equivalent to giving them root-level privileges on the host, since Docker can mount the host filesystem. This is acceptable for a lab environment but should be done cautiously in production.
+
+---
+
+## Part 4: Run hello-world
+
+```bash
+docker run hello-world
+```
+
+Expected output:
+
+```
+Unable to find image 'hello-world:latest' locally
+latest: Pulling from library/hello-world
+...
+Hello from Docker!
+This message shows that your installation appears to be working correctly.
+...
+```
+
+This confirms that:
+1. The Docker client contacted the Docker daemon.
+2. The daemon pulled the `hello-world` image from Docker Hub.
+3. The daemon created a new container from that image and ran it.
+4. The container printed its message and exited.
+
+Verify the container was created (even though it has exited):
+
+```bash
+docker ps -a
+```
+
+**Screenshot 7:** Full terminal output of `docker run hello-world`.
+![docker run hello-world output](screenshots/07-hello-world-run.png)
+
+**Screenshot 8:** Output of `docker ps -a` showing the exited `hello-world` container.
+![docker ps -a showing hello-world](screenshots/08-hello-world-ps-a.png)
+
+---
+
+## Part 5: Docker Networking
+
+Docker provides several network drivers out of the box. List them with:
+
+```bash
+docker network ls
+```
+
+Expected default output:
+
+```
+NETWORK ID     NAME      DRIVER    SCOPE
+xxxxxxxxxxxx   bridge    bridge    local
+xxxxxxxxxxxx   host      host      local
+xxxxxxxxxxxx   none      null      local
+```
+
+**Screenshot 9:** Output of `docker network ls`.
+![docker network ls](screenshots/09-network-ls.png)
+
+---
+
+### 5.1 Bridge Network (default)
+
+**Explanation:**
+The `bridge` network is Docker's default network driver. When you run a container without specifying `--network`, it attaches to the default bridge network (`docker0` on the host). Containers on this network get an internal private IP address and can communicate with each other via IP, but **not by container name** (that requires a custom bridge network). Port mapping (`-p`) is used to expose container ports to the host.
+
+**Lab steps:**
+
+```bash
+# Run a container on the default bridge network
+docker run -dit --name bridge-test1 alpine sh
+docker run -dit --name bridge-test2 alpine sh
+
+# Inspect the network
+docker network inspect bridge
+
+# Get the IP address of each container
+docker inspect -f '{{.NetworkSettings.IPAddress}}' bridge-test1
+docker inspect -f '{{.NetworkSettings.IPAddress}}' bridge-test2
+
+# From inside bridge-test1, ping bridge-test2 by IP
+docker exec -it bridge-test1 ping -c 3 <bridge-test2-IP>
+```
+
+Expected observation: ping succeeds via IP address, confirming both containers share the same bridge subnet (typically `172.17.0.0/16`).
+
+**Screenshot 10:** `docker network inspect bridge` showing connected containers and subnet.
+![Bridge network inspect](screenshots/10-bridge-inspect.png)
+
+**Screenshot 11:** Successful `ping` between the two containers by IP.
+![Bridge ping by IP](screenshots/11-bridge-ping.png)
+
+---
+
+### 5.2 Host Network
+
+**Explanation:**
+With `--network host`, the container shares the host's network namespace entirely — it has no separate IP address and uses the host's network stack directly. This means a service running on port 80 inside the container is immediately available on port 80 of the EC2 host, with no port mapping needed. It offers the best network performance but the least isolation.
+
+**Lab steps:**
+
+```bash
+# Run an Nginx container using the host network
+docker run -dit --name host-test --network host nginx
+
+# Check that no separate IP was assigned and ports match the host
+docker inspect -f '{{.NetworkSettings.IPAddress}}' host-test   # returns empty
+docker port host-test                                          # returns nothing (no NAT mapping)
+
+# Verify Nginx is reachable directly on the EC2 host's port 80
+curl http://localhost:80
+```
+
+> Note: ensure port 80 is open in your EC2 security group if testing from outside the instance, or simply curl from inside the instance as shown above.
+
+Expected observation: `curl localhost:80` returns the Nginx welcome page HTML directly, with no `-p` port mapping required, since the container is using the host's networking stack.
+
+**Screenshot 12:** `docker inspect` showing an empty IP address for the host-network container.
+![Host network inspect](screenshots/12-host-inspect.png)
+
+**Screenshot 13:** `curl http://localhost:80` returning the Nginx default page.
+![Host network curl test](screenshots/13-host-curl.png)
+
+---
+
+### 5.3 None Network
+
+**Explanation:**
+The `none` network driver gives a container its own network namespace but does **not** attach any network interface to it (aside from the loopback `lo`). This fully isolates the container from any network communication — useful for security-sensitive workloads that need no network access at all (e.g., batch processing jobs that only touch local files).
+
+**Lab steps:**
+
+```bash
+# Run a container with no networking
+docker run -dit --name none-test --network none alpine sh
+
+# Inspect network interfaces inside the container
+docker exec -it none-test ip a
+```
+
+Expected observation: only the loopback interface (`lo`) is present — there is no `eth0`, no assigned IP address, and attempting to reach any external host (e.g., `ping 8.8.8.8`) fails.
+
+```bash
+docker exec -it none-test ping -c 3 8.8.8.8
+```
+
+Expected output: `ping` fails / network unreachable, confirming the container has no network connectivity.
+
+**Screenshot 14:** `ip a` output inside the container showing only `lo`.
+![None network interfaces](screenshots/14-none-ip-a.png)
+
+**Screenshot 15:** Failed `ping` confirming network isolation.
+![None network ping failure](screenshots/15-none-ping-fail.png)
+
+---
+
+### 5.4 Custom Bridge Network
+
+**Explanation:**
+A custom bridge network is a user-defined bridge network created with `docker network create`. Unlike the default bridge, custom bridge networks provide **automatic DNS resolution between containers by name** — meaning containers can reach each other using their container name instead of an IP address. This is the recommended way to network multi-container applications on a single host (e.g., an app container talking to a database container).
+
+**Lab steps:**
+
+```bash
+# Create a custom bridge network
+docker network create --driver bridge my_custom_net
+
+# Verify it was created
+docker network ls
+docker network inspect my_custom_net
+
+# Run two containers attached to the custom network
+docker run -dit --name app1 --network my_custom_net alpine sh
+docker run -dit --name app2 --network my_custom_net alpine sh
+
+# Test name-based DNS resolution from app1 to app2
+docker exec -it app1 ping -c 3 app2
+```
+
+Expected observation: `ping app2` succeeds **by container name**, unlike on the default bridge network where name resolution is unavailable. This demonstrates the built-in DNS feature of user-defined bridge networks.
+
+**Screenshot 16:** `docker network create` and `docker network ls` showing the new custom network.
+![Custom bridge network created](screenshots/16-custom-bridge-create.png)
+
+**Screenshot 17:** `docker network inspect my_custom_net` showing both containers attached.
+![Custom bridge network inspect](screenshots/17-custom-bridge-inspect.png)
+
+**Screenshot 18:** Successful `ping app2` by name from inside `app1`.
+![Custom bridge ping by name](screenshots/18-custom-bridge-ping.png)
+
+---
+
+## Observations and Comparison
+
+| Network Type     | Isolation Level | Container-to-Container Communication | Name Resolution (DNS) | Typical Use Case |
+|-------------------|-----------------|----------------------------------------|------------------------|-------------------|
+| **bridge** (default) | Medium | Via IP only | No | Quick standalone containers |
+| **host**          | Lowest (shares host stack) | Via host's loopback/ports | N/A | High-performance services, no port mapping needed |
+| **none**          | Highest (fully isolated) | Not possible | No | Network-isolated/secure batch jobs |
+| **custom bridge** | Medium | Via IP and container name | Yes | Multi-container apps (e.g., app + DB) |
+
+Key takeaways from the lab:
+
+- The **default bridge** network works out of the box but lacks DNS-based service discovery between containers.
+- The **host** network removes network isolation entirely, giving the container direct access to the host's network interfaces and ports — useful for performance but with security trade-offs.
+- The **none** network is the most restrictive, completely cutting off network access, which is ideal for sandboxes or offline data-processing containers.
+- The **custom bridge** network is the most practical default for real multi-container applications because of automatic name-based service discovery, which the default bridge does not provide.
+
+---
+
+## Conclusion
+
+This lab demonstrated installing Docker Engine on an AWS EC2 Ubuntu instance, configuring non-root Docker access via the `docker` group, and validating the installation with the `hello-world` image. It also covered all four core Docker network drivers — bridge, host, none, and custom bridge — with hands-on verification of connectivity, isolation, and DNS-based name resolution differences between them.
+
+---
+
+## References
+
+- [Docker Official Documentation – Install Docker Engine on Ubuntu](https://docs.docker.com/engine/install/ubuntu/)
+- [Docker Official Documentation – Networking overview](https://docs.docker.com/network/)
+- [AWS EC2 User Guide](https://docs.aws.amazon.com/ec2/)
+
+---
+
+## Repository Structure
+
+```
+.
+├── README.md                # This file — full documentation
+├── screenshots/              # All screenshots referenced above
+│   ├── 01-ec2-running.png
+│   ├── 02-ssh-login.png
+│   ├── 03-docker-version.png
+│   ├── ...
+│   └── 18-custom-bridge-ping.png
+└── commands/
+    └── all-commands.sh       # Consolidated list of commands used (optional)
+```
